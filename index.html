@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Store Bill — Monthly Billing System</title>
+<style>
+:root{--primary:#2563eb;--primary-light:#eff6ff;--blue:#1456a0;--pale:#f8fafc;--line:#e2e8f0;--ink:#0f172a;--muted:#64748b;--bg:#f8fafc}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font:14px/1.5 Inter, Arial, sans-serif;color:var(--ink)}
+header{background:#fff;border-bottom:1px solid var(--line);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:5}
+.brand{display:flex;align-items:center;gap:12px}.logo{background:var(--primary);color:white;border-radius:10px;width:40px;height:40px;display:grid;place-items:center;font-weight:800;font-size:18px}.brand h1{margin:0;color:var(--ink);font-size:20px;font-weight:700}.brand small{color:var(--muted);font-size:12px}
+.wrap{max-width:1400px;margin:24px auto;padding:0 20px}
+.tabs{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;background:#fff;padding:8px;border-radius:14px;border:1px solid var(--line)}
+.tab,button{border:0;border-radius:10px;padding:10px 18px;cursor:pointer;font-weight:600;font-size:13.5px;display:inline-flex;align-items:center;gap:8px;transition:all .2s ease}
+.tab{background:transparent;color:var(--muted)}
+.tab:hover{background:var(--primary-light);color:var(--primary)}
+.tab.active{background:var(--primary);color:#fff;box-shadow:0 4px 12px rgba(37,99,235,0.25)}
+button.primary{background:var(--primary);color:#fff;box-shadow:0 2px 8px rgba(37,99,235,0.2)}
+button.primary:hover{opacity:.9}
+button.secondary{background:#f1f5f9;color:#334155}
+button.secondary:hover{background:#e2e8f0}
+button.danger{background:#fee2e2;color:#991b1b}
+button.danger:hover{background:#fecaca}
+
+/* Specific Table Button Customizations */
+.btn-view { background: #000000 !important; color: #ffffff !important; }
+.btn-view:hover { opacity: 0.85; }
+.btn-pay { background: #16a34a !important; color: #ffffff !important; }
+.btn-pay:hover { background: #15803d !important; }
+.btn-del { background: #dc2626 !important; color: #ffffff !important; }
+.btn-del:hover { background: #b91c1c !important; }
+
+.panel{display:none}.panel.active{display:block}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:24px;margin-bottom:20px;box-shadow:0 4px 20px rgba(0,0,0,0.03)}
+.card h2{font-size:18px;margin:0 0 16px;color:var(--ink);font-weight:700}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase}
+.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 14px;font:inherit;background:#fff;color:var(--ink)}
+.field textarea{min-height:75px;resize:vertical}
+.span2{grid-column:span 2}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 4px 20px rgba(0,0,0,0.03)}
+.stat small{color:var(--muted);font-weight:600;font-size:12px}
+.stat strong{display:block;font-size:26px;margin-top:8px;color:var(--primary)}
+table{border-collapse:collapse;width:100%;background:#fff;overflow:hidden;border-radius:10px}
+th,td{padding:12px 14px;border-bottom:1px solid var(--line);font-size:13.5px;vertical-align:middle}
+th{background:#1d4ed8;color:#fff;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.5px}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px}
+/* Center all table headers */
+.table-wrap th {
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Center table cell content & maintain consistent column flow */
+.table-wrap td:not([colspan]) {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.table-wrap td:last-child button {
+  vertical-align: middle;
+  padding: 8px 14px;
+}
+.table-wrap td:last-child button + button {
+  margin-left: 6px;
+}
+
+/* Column Width & Gap Adjustments */
+#dashboard table th:nth-child(1) { width: 14%; }
+#dashboard table th:nth-child(2) { width: 24%; }
+#dashboard table th:nth-child(3) { width: 12%; }
+#dashboard table th:nth-child(4) { width: 12%; }
+#dashboard table th:nth-child(5) { width: 14%; }
+#dashboard table th:nth-child(6) { width: 10%; }
+#dashboard table th:nth-child(7) { width: 14%; }
+
+#customers table th:nth-child(1) { width: 28%; }
+#customers table th:nth-child(2) { width: 14%; }
+#customers table th:nth-child(3) { width: 12%; }
+#customers table th:nth-child(4) { width: 13%; }
+#customers table th:nth-child(5) { width: 17%; }
+#customers table th:nth-child(6) { width: 16%; }
+
+#history table th:nth-child(1) { width: 11%; }
+#history table th:nth-child(2) { width: 20%; }
+#history table th:nth-child(3) { width: 9%; }
+#history table th:nth-child(4) { width: 9%; }
+#history table th:nth-child(5) { width: 11%; }
+#history table th:nth-child(6) { width: 10%; }
+#history table th:nth-child(7) { width: 10%; }
+#history table th:nth-child(8) { width: 8%; }
+#history table th:nth-child(9) { width: 12%; }
+.status{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:11.5px;font-weight:700}
+.status.Paid{background:#dcfce7;color:#166534}
+.status.Unpaid{background:#fee2e2;color:#991b1b}
+.status.Partial{background:#fef3c7;color:#92400e}
+.invoice{background:#fff;max-width:760px;margin:0 auto;padding:54px 50px;min-height:980px;border:1px solid var(--line);color:#111827;font-family:"Times New Roman",Times,serif;position:relative;box-shadow:0 10px 30px rgba(0,0,0,0.05);border-radius:8px}
+.invoice-header-top{display:flex;justify-content:space-between;align-items:flex-start}
+.invoice-meta{text-align:right;font-size:14px}
+.invoice h1{font-size:42px;color:#1b579c;margin:0}
+.invoice .org{font-size:14px;color:#1b579c;font-weight:bold;margin-top:4px}
+.invoice .owner{border-bottom:1px solid #1b579c;padding:10px 0 5px;font-size:14px;font-weight:bold}
+.invoice table{font-family:"Times New Roman",Times,serif;font-size:14px;margin:12px auto;width:90%;border-radius:0}
+.invoice th,.invoice td{text-align:center;padding:7px;border:1px solid #1b579c;background:transparent}
+.invoice th{background:#e7f0fc;color:#111827}
+.invoice .paybox{border:1px solid #1b579c;text-align:center;padding:8px;margin-top:18px;font-size:13px;font-weight:bold}
+.signatures{display:flex;justify-content:space-between;margin-top:55px;min-height:150px}
+.footer{position:absolute;bottom:40px;left:50px;right:50px;border-top:1px solid #8aadd4;padding-top:8px;color:#6c93c2;font-size:11px}
+.amountwords{font-size:14px;margin-top:6px;font-weight:bold}
+.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,0.5);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:1000}
+.modal-box{background:#fff;border-radius:16px;padding:28px;width:100%;max-width:440px}
+#toastNotification{position:fixed;bottom:30px;right:30px;background:#166534;color:#fff;padding:14px 22px;border-radius:12px;font-weight:600;z-index:99999;display:none;align-items:center;gap:10px;border:1px solid #22c55e}
+.paid-stamp {
+  position: absolute;
+  top: 140px;
+  right: 55px;
+  border: 3.5px solid #16a34a;
+  outline: 2px dashed #16a34a;
+  outline-offset: 3px;
+  color: #16a34a;
+  background: rgba(240, 253, 244, 0.9);
+  padding: 6px 18px;
+  border-radius: 6px;
+  transform: rotate(-12deg);
+  font-family: 'Arial Black', Impact, 'Segoe UI', sans-serif;
+  text-align: center;
+  pointer-events: none;
+  z-index: 10;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.paid-stamp span {
+  font-size: 26px;
+  line-height: 1.1;
+  font-weight: 900;
+  letter-spacing: 3px;
+}
+.paid-stamp small {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-top: 3px;
+  font-family: Arial, sans-serif;
+}
+@page {
+  size: A4;
+  margin: 0;
+}
+@media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+  .no-print, header, .tabs, .wrap > .panel:not(#invoicePanel), #invoicePanel > .card:first-child {
+    display: none !important;
+  }
+  .wrap {
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: none !important;
+  }
+  #invoicePanel {
+    display: block !important;
+  }
+  .invoice {
+    border: 0 !important;
+    margin: 0 auto !important;
+    width: 210mm !important;
+    min-height: 297mm !important;
+    padding: 20mm 18mm !important;
+    box-shadow: none !important;
+  }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><div class="logo">SB</div><div><h1>Store Bill</h1><small>Monthly Billing System</small></div></div>
+  <div class="muted">Store Bill · v2.7</div>
+</header>
+<div class="wrap">
+  <div class="tabs no-print">
+    <button class="tab active" data-target="dashboard">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg> Dashboard
+    </button>
+    <button class="tab" data-target="customers">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 00-3-3.87"></path><path d="M16 3.13a4 4 0 010 7.75"></path></svg> Customers
+    </button>
+    <button class="tab" data-target="create">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Create Invoice
+    </button>
+    <button class="tab" data-target="history">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> Invoice History
+    </button>
+    <button class="tab" data-target="settings">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"></path></svg> Settings
+    </button>
+  </div>
+
+  <section id="dashboard" class="panel active">
+    <div class="stats">
+      <div class="stat"><small>Total Customers</small><strong id="statCustomers">0</strong></div>
+      <div class="stat"><small>Total Invoiced</small><strong id="statInvoiced">৳0.00</strong></div>
+      <div class="stat"><small>Total Collected</small><strong id="statCollected">৳0.00</strong></div>
+      <div class="stat"><small>Outstanding</small><strong id="statDue">৳0.00</strong></div>
+    </div>
+    <div class="card" style="margin-top:20px">
+      <h2>Recent Invoices</h2>
+      <div class="table-wrap"><table><thead><tr><th>Invoice</th><th>Customer</th><th>Floor</th><th>Month</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead><tbody id="recentRows"></tbody></table></div>
+    </div>
+  </section>
+
+  <section id="customers" class="panel">
+    <div class="card">
+      <h2 id="customerFormTitle">Add Customer</h2>
+      <input type="hidden" id="customerId">
+      <div class="grid">
+        <div class="field span2"><label>Customer / Company Name *</label><input id="cName" placeholder="Agile Minds AMSL"></div>
+        <div class="field"><label>Contact Person</label><input id="cContact" placeholder="Contact name"></div>
+        <div class="field"><label>Level / Floor</label><input id="cFloor" placeholder="Level 6"></div>
+        <div class="field span2"><label>Full Address</label><input id="cAddress" placeholder="House # 99, Road # 11, Block - C, Banani Dhaka 1213."></div>
+        <div class="field"><label>Area (Sft)</label><input id="cSft" type="number" min="0" placeholder="2216"></div>
+        <div class="field"><label>Rate (৳ / Sft)</label><input id="cRate" type="number" min="0" step="0.01" placeholder="105"></div>
+      </div>
+      <div class="actions">
+        <button class="primary" id="saveCustomerBtn">Save Customer</button>
+        <button class="secondary" id="resetCustomerBtn">Clear</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Customer List</h2>
+      <div class="table-wrap"><table><thead><tr><th>Name</th><th>Floor</th><th>Sft</th><th>Rate</th><th>Monthly Rent</th><th>Actions</th></tr></thead><tbody id="customerRows"></tbody></table></div>
+    </div>
+  </section>
+
+  <section id="create" class="panel">
+    <div class="card">
+      <h2>Create Monthly Invoice</h2>
+      <div class="grid">
+        <div class="field span2"><label>Select Customer *</label><select id="iCustomer"><option value="">Choose customer</option></select></div>
+        <div class="field"><label>Invoice Type</label><input id="iType" value="Invoice Rent"></div>
+        <div class="field"><label>Billing Month</label><input id="iMonth" type="month"></div>
+        <div class="field"><label>Floor</label><input id="iFloor"></div>
+        <div class="field"><label>Sft</label><input id="iSft" type="number" min="0"></div>
+        <div class="field"><label>Rate</label><input id="iRate" type="number" min="0" step="0.01"></div>
+        <div class="field"><label>Total Month(s)</label><input id="iMonths" type="number" min="1" value="1"></div>
+        <div class="field"><label>Rent Amount (৳)</label><input id="iRent" readonly></div>
+        <div class="field"><label>Paid Amount (৳)</label><input id="iPaid" type="number" min="0" value="0"></div>
+        <div class="field span2"><label>Cheque / P.O. Payment Instruction</label><input id="iPayment" value='Payable by Cheque/P.O in the name "Amit Islam" =2003201000001664 - UCB Bank'></div>
+        <div class="field"><label>Checked By</label><input id="iChecked" value="Md. Babul Mia"></div>
+        <div class="field"><label>Received By</label><input id="iReceived"></div>
+      </div>
+      <div class="actions">
+        <button class="primary" id="makeInvoiceBtn">Generate Invoice</button>
+        <button class="secondary" id="clearInvoiceFormBtn">Reset</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="invoicePanel" class="panel">
+    <div class="card no-print" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <strong>Invoice Preview</strong>
+      <div class="actions" style="margin:0">
+        <button class="primary" onclick="printInvoice()">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg> Print / Save PDF
+        </button>
+        <button class="secondary" id="previewAddPaymentBtn">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"></path></svg> Add Payment
+        </button>
+        <button class="secondary" id="backToHistoryBtn">Invoice History</button>
+      </div>
+    </div>
+    <div id="invoicePaper" class="invoice">
+      <div id="vPaidStamp" class="paid-stamp">
+        <span>PAID</span>
+        <small id="vPaidDateText">FULL PAYMENT</small>
+      </div>
+      <div class="invoice-header-top">
+        <div>
+          <h1 id="vBrandTitle">AWR</h1>
+          <div class="org" id="vOrgName">AWR NIB TOWER OWNER ASSOCIATION</div>
+        </div>
+        <div class="invoice-meta">
+          <div id="vInvoiceId">Invoice ID: --</div>
+          <div id="vInvoiceDate">Date: --</div>
+        </div>
+      </div>
+      <div class="owner" id="vOwner">Amit Islam</div>
+      <div class="billto"><b id="vType">Invoice Rent</b><br><span id="vName"></span><br><span id="vFloor"></span><br><span id="vAddress"></span></div>
+      <div class="billmonth" id="vMonth"></div>
+      <table>
+        <thead><tr><th>Floor</th><th>Sft</th><th>Rate</th><th>Rent</th></tr></thead>
+        <tbody id="vTableBody"></tbody>
+      </table>
+      <div class="amountwords" id="vWords"></div>
+      <div class="paybox" id="vPayment"></div>
+      <div class="signatures"><div>Checked by<br><span id="vChecked"></span><br>Brain Code Ltd.</div><div>Received by<br><span id="vReceived"></span></div></div>
+      <div class="footer"><b>Office Address:</b><br>House # 99, Road # 11, Block # C, Banani<br>Dhaka # 1213. Phone : 88029861884</div>
+    </div>
+  </section>
+
+  <section id="history" class="panel">
+    <div class="card">
+      <h2>Invoice History</h2>
+      <div class="table-wrap"><table><thead><tr><th>Invoice ID</th><th>Customer</th><th>Floor</th><th>Month</th><th>Total</th><th>Paid</th><th>Due</th><th>Status</th><th>Action</th></tr></thead><tbody id="historyRows"></tbody></table></div>
+    </div>
+  </section>
+
+  <section id="settings" class="panel">
+    <div class="card">
+      <h2>Invoice Header Settings</h2>
+      <div class="grid">
+        <div class="field"><label>Company/Brand Short Name</label><input id="setBrand" placeholder="AWR"></div>
+        <div class="field span2"><label>Association / Organization Name</label><input id="setOrg" placeholder="AWR NIB TOWER OWNER ASSOCIATION"></div>
+        <div class="field"><label>Owner / Authorized Person Name</label><input id="setOwner" placeholder="Amit Islam"></div>
+      </div>
+      <div class="actions"><button class="primary" id="saveSettingsBtn">Save Settings</button></div>
+    </div>
+  </section>
+</div>
+
+<div id="paymentModal" class="modal-overlay">
+  <div class="modal-box">
+    <h3>Add Payment</h3>
+    <p id="modalDueText">Current Due: ৳0.00</p>
+    <div id="paymentMainOptions" style="display:flex;flex-direction:column;gap:10px;">
+      <button class="primary" style="width:100%;padding:12px;" id="payFullBtn">Pay Full Amount (Clear Due)</button>
+      <button class="secondary" style="width:100%;padding:12px;" id="payPartialBtn">Pay Partial Amount</button>
+      <button class="danger" style="width:100%;color:#334155;" id="cancelModalBtn">Cancel</button>
+    </div>
+    <div id="paymentPartialSection" style="display:none;flex-direction:column;gap:12px;">
+      <div class="field">
+        <label>Enter Partial Amount (৳)</label>
+        <input type="number" id="partialAmountInput" min="1" placeholder="Enter amount">
+      </div>
+      <div class="actions" style="margin-top:0;">
+        <button class="primary" id="confirmPartialBtn">Confirm Payment</button>
+        <button class="secondary" id="backToOptionsBtn">Back</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toastNotification">
+  <span>✅</span> <span id="toastText">Payment added Successfully</span>
+</div>
+
+<script>
+const $=id=>document.getElementById(id), money=n=>'৳'+Number(n||0).toLocaleString('en-BD',{minimumFractionDigits:2,maximumFractionDigits:2});
+let customers=JSON.parse(localStorage.getItem('storeBillCustomers')||'[]');
+let invoices=JSON.parse(localStorage.getItem('storeBillInvoices')||'[]');
+let settings=JSON.parse(localStorage.getItem('storeBillSettings')||JSON.stringify({brand:'AWR',org:'AWR NIB TOWER OWNER ASSOCIATION',owner:'Amit Islam'}));
+let activeInvoiceId = null;
+
+function formatMonth(mStr){
+  if(!mStr) return '';
+  let parts = mStr.split('-');
+  return parts.length === 2 ? `${parts[1]}-${parts[0]}` : mStr;
+}
+
+function showToast(message) {
+  let toast = $('toastNotification');
+  $('toastText').textContent = message;
+  toast.style.display = 'flex';
+  setTimeout(() => { toast.style.display = 'none'; }, 3500);
+}
+
+function persist(){
+  localStorage.setItem('storeBillCustomers',JSON.stringify(customers));
+  localStorage.setItem('storeBillInvoices',JSON.stringify(invoices));
+  localStorage.setItem('storeBillSettings',JSON.stringify(settings));
+  renderAll();
+}
+
+function switchTab(targetId){
+  if(targetId !== 'invoicePanel'){
+    document.title = 'Store Bill — Monthly Billing System';
+  }
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  let target = $(targetId);
+  if(target) target.classList.add('active');
+  document.querySelectorAll('.tab').forEach(t=>{
+    t.classList.toggle('active', t.getAttribute('data-target') === targetId);
+  });
+}
+
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click', () => switchTab(t.getAttribute('data-target')));
+});
+
+$('backToHistoryBtn').addEventListener('click', () => switchTab('history'));
+$('previewAddPaymentBtn').addEventListener('click', () => {
+  if(activeInvoiceId) addPayment(activeInvoiceId);
+  else alert('No active invoice selected!');
+});
+
+$('saveSettingsBtn').addEventListener('click', () => {
+  settings.brand=$('setBrand').value.trim()||'AWR';
+  settings.org=$('setOrg').value.trim()||'AWR NIB TOWER OWNER ASSOCIATION';
+  settings.owner=$('setOwner').value.trim()||'Amit Islam';
+  persist();
+  alert('Settings saved successfully!');
+});
+
+$('saveCustomerBtn').addEventListener('click', saveCustomer);
+$('resetCustomerBtn').addEventListener('click', resetCustomer);
+$('makeInvoiceBtn').addEventListener('click', makeInvoice);
+$('clearInvoiceFormBtn').addEventListener('click', clearInvoiceForm);
+
+['iSft','iRate','iMonths','iPaid'].forEach(id => {
+  $(id).addEventListener('input', calcRent);
+});
+$('iCustomer').addEventListener('change', fillCustomer);
+
+$('historyRows').addEventListener('click', (e) => {
+  let viewBtn = e.target.closest('.view-inv');
+  let payBtn = e.target.closest('.pay-inv');
+  let delBtn = e.target.closest('.del-inv');
+  if(viewBtn) openInvoice(viewBtn.getAttribute('data-id'));
+  else if(payBtn) addPayment(payBtn.getAttribute('data-id'));
+  else if(delBtn) deleteInvoice(delBtn.getAttribute('data-id'));
+});
+
+$('recentRows').addEventListener('click', (e) => {
+  let viewBtn = e.target.closest('.view-inv');
+  let payBtn = e.target.closest('.pay-inv');
+  let delBtn = e.target.closest('.del-inv');
+  if(viewBtn) openInvoice(viewBtn.getAttribute('data-id'));
+  else if(payBtn) addPayment(payBtn.getAttribute('data-id'));
+  else if(delBtn) deleteInvoice(delBtn.getAttribute('data-id'));
+});
+
+$('customerRows').addEventListener('click', (e) => {
+  let editBtn = e.target.closest('.edit-cust');
+  let delBtn = e.target.closest('.del-cust');
+  if(editBtn) editCustomer(editBtn.getAttribute('data-id'));
+  else if(delBtn) deleteCustomer(delBtn.getAttribute('data-id'));
+});
+
+function saveCustomer(){
+  let name=$('cName').value.trim();
+  if(!name)return alert('Customer name is required.');
+  let obj={
+    id:$('customerId').value||Date.now().toString(),
+    name,
+    contact:$('cContact').value,
+    floor:$('cFloor').value,
+    address:$('cAddress').value,
+    sft:+$('cSft').value,
+    rate:+$('cRate').value
+  };
+  let idx=customers.findIndex(x=>x.id===obj.id);
+  if(idx>=0) customers[idx]=obj;
+  else customers.push(obj);
+  resetCustomer();
+  persist();
+}
+
+function resetCustomer(){
+  ['customerId','cName','cContact','cFloor','cAddress','cSft','cRate'].forEach(x=>$(x).value='');
+  $('customerFormTitle').textContent='Add Customer';
+}
+
+function editCustomer(id){
+  let c=customers.find(x=>x.id===id);
+  if(!c)return;
+  $('customerId').value=c.id;
+  $('cName').value=c.name;
+  $('cContact').value=c.contact;
+  $('cFloor').value=c.floor;
+  $('cAddress').value=c.address;
+  $('cSft').value=c.sft;
+  $('cRate').value=c.rate;
+  $('customerFormTitle').textContent='Edit Customer';
+  switchTab('customers');
+}
+
+function deleteCustomer(id){
+  if(confirm('Delete this customer?')){
+    customers=customers.filter(x=>x.id!==id);
+    persist();
+  }
+}
+
+function deleteInvoice(id){
+  if(confirm('Are you sure you want to delete this invoice?')){
+    invoices = invoices.filter(x => x.id !== id);
+    persist();
+    showToast('Invoice deleted successfully');
+  }
+}
+
+function fillCustomer(){
+  let c=customers.find(x=>x.id===$('iCustomer').value);
+  if(!c)return;
+  $('iFloor').value=c.floor;
+  $('iSft').value=c.sft;
+  $('iRate').value=c.rate;
+  calcRent();
+}
+
+function calcRent(){
+  let total=(+$('iSft').value||0)*(+$('iRate').value||0)*(+$('iMonths').value||1);
+  $('iRent').value=total.toFixed(2);
+}
+
+function clearInvoiceForm(){
+  ['iCustomer','iFloor','iSft','iRate','iRent','iPaid','iReceived'].forEach(x=>$(x).value='');
+  $('iMonths').value=1;
+  $('iMonth').value=new Date().toISOString().slice(0,7);
+}
+
+function makeInvoice(){
+  let c=customers.find(x=>x.id===$('iCustomer').value);
+  if(!c)return alert('Please select a customer.');
+  if(!$('iMonth').value)return alert('Please select billing month.');
+  calcRent();
+  let total=+$('iRent').value,paid=+$('iPaid').value;
+  if(paid>total)return alert('Paid amount cannot exceed invoice total.');
+  
+  let payments = [];
+  if(paid > 0){
+    payments.push({
+      date: new Date().toLocaleDateString('en-GB'),
+      amount: paid,
+      note: 'Advance/Initial Payment'
+    });
+  }
+
+  let now = new Date();
+  let dd = String(now.getDate()).padStart(2, '0');
+  let mm = String(now.getMonth() + 1).padStart(2, '0');
+  let yyyy = now.getFullYear();
+
+  let inv={
+    id:'SB-'+Date.now().toString().slice(-8),
+    customerId:c.id,
+    name:c.name,
+    floor:$('iFloor').value,
+    sft:+$('iSft').value,
+    rate:+$('iRate').value,
+    months:+$('iMonths').value||1,
+    total,
+    paid,
+    due:total-paid,
+    payments: payments,
+    month:$('iMonth').value,
+    type:$('iType').value,
+    payment:$('iPayment').value,
+    checked:$('iChecked').value,
+    received:$('iReceived').value,
+    created: `${dd}-${mm}-${yyyy}`
+  };
+  
+  invoices.unshift(inv);
+  persist();
+  renderInvoice(inv);
+  switchTab('invoicePanel');
+}
+
+function printInvoice(){
+  let i = invoices.find(x => x.id === activeInvoiceId);
+  if(i){
+    let invMonthStr = '';
+    try {
+      invMonthStr = new Date(i.month + '-02').toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    } catch(e) {
+      invMonthStr = i.month || '';
+    }
+    let cleanName = (i.name || 'Customer').replace(/[\\/:*?"<>|]/g, '').trim();
+    let cleanFloor = (i.floor || '').replace(/[\\/:*?"<>|]/g, '').trim();
+    let titleParts = [cleanName];
+    if(cleanFloor) titleParts.push(cleanFloor);
+    if(invMonthStr) titleParts.push(invMonthStr);
+    document.title = titleParts.join(' - ');
+  let stamp = $('vPaidStamp');
+  if(stamp){
+    if(i.due <= 0){
+      stamp.style.display = 'flex';
+      let lastPay = (i.payments && i.payments.length > 0) ? i.payments[i.payments.length - 1] : null;
+      let payDate = lastPay ? lastPay.date : (i.created || '');
+      $('vPaidDateText').textContent = payDate ? `CLEARED: ${payDate}` : 'FULL PAYMENT';
+    } else {
+      stamp.style.display = 'none';
+    }
+  }
+  }
+  window.print();
+}
+
+function renderInvoice(i){
+  activeInvoiceId = i.id;
+  let invMonthStr = '';
+  try {
+    invMonthStr = new Date(i.month + '-02').toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  } catch(e) {
+    invMonthStr = i.month || '';
+  }
+  let cleanName = (i.name || 'Customer').replace(/[\\/:*?"<>|]/g, '').trim();
+  let cleanFloor = (i.floor || '').replace(/[\\/:*?"<>|]/g, '').trim();
+  let titleParts = [cleanName];
+  if(cleanFloor) titleParts.push(cleanFloor);
+  if(invMonthStr) titleParts.push(invMonthStr);
+  document.title = titleParts.join(' - ');
+  let stamp = $('vPaidStamp');
+  if(stamp){
+    if(i.due <= 0){
+      stamp.style.display = 'flex';
+      let lastPay = (i.payments && i.payments.length > 0) ? i.payments[i.payments.length - 1] : null;
+      let payDate = lastPay ? lastPay.date : (i.created || '');
+      $('vPaidDateText').textContent = payDate ? `CLEARED: ${payDate}` : 'FULL PAYMENT';
+    } else {
+      stamp.style.display = 'none';
+    }
+  }
+  $('vBrandTitle').textContent=settings.brand;
+  $('vOrgName').textContent=settings.org;
+  $('vOwner').textContent=settings.owner;
+  $('vInvoiceId').textContent='Invoice ID: ' + i.id;
+  $('vInvoiceDate').textContent='Date: ' + (i.created || '04-11-2026');
+  $('vName').textContent=i.name;
+  $('vFloor').textContent=i.floor;
+  let c=customers.find(x=>x.id===i.customerId);
+  $('vAddress').textContent=c?.address||'';
+  $('vType').textContent=i.type;
+  $('vMonth').textContent='Month of '+new Date(i.month+'-02').toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  
+  let tbodyHtml = `
+    <tr><td>${esc(i.floor)}</td><td>${i.sft.toLocaleString('en-BD')}</td><td>${Number(i.rate).toLocaleString('en-BD')}</td><td>${money(i.total)}</td></tr>
+    <tr><th colspan="2">Total: ${i.months===1?'One':i.months} Month</th><th>${i.months}</th><th>${money(i.total)}</th></tr>
+  `;
+
+  let payList = i.payments || [];
+  if(payList.length > 0){
+    payList.forEach((p, idx)=>{
+      tbodyHtml += `<tr><th colspan="3" style="text-align:right;font-weight:normal;font-size:12px;">Payment #${idx+1} (${p.date}):</th><td style="color:#166534;font-size:13px;">${money(p.amount)}</td></tr>`;
+    });
+  } else if(i.paid > 0) {
+    tbodyHtml += `<tr><th colspan="3" style="text-align:right;font-weight:normal;font-size:12px;">Paid Amount:</th><td style="color:#166534;font-size:13px;">${money(i.paid)}</td></tr>`;
+  }
+
+  tbodyHtml += `
+    <tr><th colspan="3" style="text-align:right;">Total Paid:</th><th style="color:#166534;">${money(i.paid)}</th></tr>
+    <tr><th colspan="3" style="text-align:right;">Due Balance:</th><th style="color:#991b1b;">${money(i.due)}</th></tr>
+  `;
+
+  $('vTableBody').innerHTML = tbodyHtml;
+  $('vWords').textContent='Taka: '+numberWords(Math.round(i.total))+' taka only.';
+  $('vPayment').textContent=i.payment;
+  $('vChecked').textContent=i.checked;
+  $('vReceived').textContent=i.received;
+}
+
+function numberWords(n){if(n===0)return'Zero';let a=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'],b=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];function under(x){if(x<20)return a[x];if(x<100)return b[Math.floor(x/10)]+(x%10?' '+a[x%10]:'');if(x<1000)return a[Math.floor(x/100)]+' Hundred'+(x%100?' '+under(x%100):'');return''}let out=[];[['Crore',10000000],['Lac',100000],['Thousand',1000],['',1]].forEach(([label,v])=>{let q=Math.floor(n/v);if(q){out.push(under(q)+(label?' '+label:''));n%=v}});return out.join(' ')}
+
+function status(i){return i.due<=0?'Paid':i.paid>0?'Partial':'Unpaid'}
+
+function loadSettingsInputs(){
+  if($('setBrand')) $('setBrand').value = settings.brand || '';
+  if($('setOrg')) $('setOrg').value = settings.org || '';
+  if($('setOwner')) $('setOwner').value = settings.owner || '';
+}
+
+function renderAll(){
+  $('customerRows').innerHTML=customers.map(c=>`<tr><td>${esc(c.name)}</td><td>${esc(c.floor)}</td><td>${c.sft}</td><td>${money(c.rate)}</td><td>${money(c.sft*c.rate)}</td><td><button class="secondary edit-cust" data-id="${c.id}">Edit</button> <button class="danger del-cust" data-id="${c.id}">Delete</button></td></tr>`).join('')||'<tr><td colspan="6">No customers added yet.</td></tr>';
+  
+  $('iCustomer').innerHTML='<option value="">Choose customer</option>'+customers.map(c=>`<option value="${c.id}">${esc(c.name)} (${esc(c.floor)})</option>`).join('');
+  
+  let sortedInvoices = [...invoices].sort((a, b) => b.month.localeCompare(a.month));
+
+  $('historyRows').innerHTML=sortedInvoices.map(i=>`<tr><td>${i.id}</td><td>${esc(i.name)}</td><td>${esc(i.floor)}</td><td>${formatMonth(i.month)}</td><td>${money(i.total)}</td><td>${money(i.paid)}</td><td>${money(i.due)}</td><td><span class="status ${status(i)}">${status(i)}</span></td><td><button class="btn-view view-inv" data-id="${i.id}"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg> View</button> <button class="btn-pay pay-inv" data-id="${i.id}"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"></path></svg> Pay</button> <button class="btn-del del-inv" data-id="${i.id}"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path></svg> Delete</button></td></tr>`).join('')||'<tr><td colspan="9">No invoices created yet.</td></tr>';
+  
+  $('recentRows').innerHTML=sortedInvoices.slice(0,5).map(i=>`<tr><td>${i.id}</td><td>${esc(i.name)}</td><td>${esc(i.floor)}</td><td>${formatMonth(i.month)}</td><td>${money(i.total)}</td><td><span class="status ${status(i)}">${status(i)}</span></td><td><button class="btn-view view-inv" data-id="${i.id}"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg> View</button> <button class="btn-del del-inv" data-id="${i.id}"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path></svg> Delete</button></td></tr>`).join('')||'<tr><td colspan="7">No invoices yet.</td></tr>';
+  
+  $('statCustomers').textContent=customers.length;
+  $('statInvoiced').textContent=money(invoices.reduce((s,i)=>s+i.total,0));
+  $('statCollected').textContent=money(invoices.reduce((s,i)=>s+i.paid,0));
+  $('statDue').textContent=money(invoices.reduce((s,i)=>s+i.due,0));
+  loadSettingsInputs();
+}
+
+function openInvoice(id){
+  let i=invoices.find(x=>x.id===id);
+  if(i){
+    renderInvoice(i);
+    switchTab('invoicePanel');
+  } else {
+    alert('Invoice not found!');
+  }
+}
+
+function addPayment(id){
+  let i=invoices.find(x=>x.id===id);
+  if(!i)return;
+  if(i.due<=0)return alert('This invoice is already fully paid.');
+  activeInvoiceId = id;
+  $('modalDueText').textContent = 'Current Due: ' + money(i.due);
+  $('paymentMainOptions').style.display = 'flex';
+  $('paymentPartialSection').style.display = 'none';
+  $('partialAmountInput').value = '';
+  $('paymentModal').style.display = 'flex';
+}
+
+function closePaymentModal(){
+  $('paymentModal').style.display = 'none';
+}
+
+$('payFullBtn').addEventListener('click', ()=>{
+  let i=invoices.find(x=>x.id===activeInvoiceId);
+  if(!i)return;
+  if(!i.payments) i.payments = [];
+  let payAmount = i.due;
+  i.payments.push({
+    date: new Date().toLocaleDateString('en-GB'),
+    amount: payAmount,
+    note: 'Full Clearing Payment'
+  });
+  i.paid = i.total;
+  i.due = 0;
+  persist();
+  closePaymentModal();
+  renderInvoice(i);
+  showToast('Payment added Successfully');
+});
+
+$('payPartialBtn').addEventListener('click', ()=>{
+  $('paymentMainOptions').style.display = 'none';
+  $('paymentPartialSection').style.display = 'flex';
+  $('partialAmountInput').focus();
+});
+
+$('backToOptionsBtn').addEventListener('click', ()=>{
+  $('paymentMainOptions').style.display = 'flex';
+  $('paymentPartialSection').style.display = 'none';
+});
+
+$('cancelModalBtn').addEventListener('click', closePaymentModal);
+
+$('confirmPartialBtn').addEventListener('click', submitPartialAmount);
+$('partialAmountInput').addEventListener('keydown', (e)=>{
+  if(e.key==='Enter') submitPartialAmount();
+});
+
+function submitPartialAmount(){
+  let i=invoices.find(x=>x.id===activeInvoiceId);
+  if(!i)return;
+  let n = Number($('partialAmountInput').value);
+  if(!Number.isFinite(n)||n<=0||n>i.due){
+    return alert('Please enter a valid amount within the due balance.');
+  }
+  if(!i.payments) i.payments = [];
+  i.payments.push({
+    date: new Date().toLocaleDateString('en-GB'),
+    amount: n,
+    note: 'Partial Payment'
+  });
+  i.paid += n;
+  i.due = i.total - i.paid;
+  persist();
+  closePaymentModal();
+  renderInvoice(i);
+  showToast('Payment added Successfully');
+}
+
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+$('iMonth').value=new Date().toISOString().slice(0,7);
+renderAll();
+</script>
+</body>
+</html>
